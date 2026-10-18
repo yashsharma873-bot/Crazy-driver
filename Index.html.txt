@@ -1,0 +1,87 @@
+Index.html
+}
+
+let running=false,score=0,speed=24,targetX=0,spawnTimer=0,lastTime=0;
+
+function steer(dir){
+if(running)targetX=Math.max(-3,Math.min(3,targetX+dir*3));
+}
+document.getElementById('left').addEventListener('pointerdown',e=>{e.preventDefault();steer(-1)});
+document.getElementById('right').addEventListener('pointerdown',e=>{e.preventDefault();steer(1)});
+addEventListener('keydown',e=>{
+if(e.key==='ArrowLeft')steer(-1);
+if(e.key==='ArrowRight')steer(1);
+});
+
+function endGame(){
+running=false;
+document.getElementById('overlay').style.display='flex';
+document.querySelector('h1').textContent='GAME OVER!';
+document.querySelector('.panel p').textContent='Your score: '+Math.floor(score);
+document.getElementById('start').textContent='PLAY AGAIN ↻';
+}
+
+function startGame(){
+traffic.forEach(c=>scene.remove(c));
+traffic.length=0;
+score=0;speed=24;spawnTimer=0;targetX=0;
+player.position.x=0;
+running=true;
+lastTime=performance.now();
+document.getElementById('overlay').style.display='none';
+}
+
+document.getElementById('start').onclick=startGame;
+
+function animate(now){
+requestAnimationFrame(animate);
+const dt=Math.min((now-lastTime)/1000,.05);
+if(running){
+lastTime=now;
+score+=dt*10;
+speed=Math.min(38,24+score/30);
+document.getElementById('score').textContent=Math.floor(score);
+
+player.position.x+=(targetX-player.position.x)*Math.min(1,dt*9);
+
+marks.forEach(m=>{
+m.position.z+=speed*dt;
+if(m.position.z>7)m.position.z-=140;
+});
+roadside.forEach(t=>{
+t.position.z+=speed*dt;
+if(t.position.z>8)t.position.z-=189;
+});
+
+spawnTimer+=dt;
+if(spawnTimer>Math.max(.65,1.5-score/250)){
+spawnTimer=0;
+addTraffic();
+}
+
+for(let i=traffic.length-1;i>=0;i--){
+const c=traffic[i];
+c.position.z+=speed*dt;
+if(Math.abs(c.position.z-player.position.z)<2 &&
+Math.abs(c.position.x-player.position.x)<1.65)endGame();
+if(c.position.z>12){
+scene.remove(c);
+traffic.splice(i,1);
+}
+}
+camera.position.x+=(player.position.x*.22-camera.position.x)*dt*2;
+camera.lookAt(player.position.x*.18,0,-12);
+}
+renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+
+addEventListener('resize',()=>{
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
+
